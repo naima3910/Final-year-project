@@ -1,0 +1,106 @@
+<!doctype html>
+<html>
+<head>
+	{% load static %}
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="{% static 'login/style.css' %}" />
+    <script src="{% static 'login/jslib/jquery-3.1.1.min.js' %}"></script>
+    <script src="{% static 'login/jslib/jquery.validate.min.js' %}"></script>
+    <script src="{% static 'login/jslib/jquery-ui.min.js' %}"></script>
+    <script type="text/javascript">
+		function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        const csrftoken = getCookie('csrftoken');
+
+		$(document).ready(function() {
+
+			$("#resetPwdform").on('submit', function(e) {
+				if ($("#resetPwdform").valid()) {
+					e.preventDefault();
+					$.ajax({
+						type:"post",
+						url: "{% url 'login:changepwd'%}",
+						data: $("#resetPwdform").serialize(),
+						beforeSend: function(xhr, settings) {
+                            if (!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
+                                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                            }
+                        },
+						success:function(data){
+							if(data === "success")
+								window.location.replace("/dashboard");
+							else
+								document.getElementById("error").innerHTML = "The old password is incorrect!.";
+						}
+					});
+				}
+			});
+			
+			$("#resetPwdform").validate({
+				rules: {
+					oldpwd: {
+						required: true,
+						minlength: 6
+					},
+					newpwd: {
+						required: true,
+						minlength: 6
+					},
+					newpwdconfirm: {
+						required: true,
+						equalTo: "#newpwd",
+						minlength: 6
+					}
+				},
+				messages: {
+					oldpwd: {
+						required: "The old password is required",
+						minlength: "The password has to be at least 6 characters!"
+					},
+					newpwd: {
+						required: "The new password is required!",
+						minlength: "The password has to be 6 digits."
+					},
+					newpwdconfirm: {
+						required: "The password confirmation is required!",
+						minlength: "The password has to be 6 digits.",
+						equalTo: "Please confirm your password!"
+					}
+				}
+			});
+			
+		});
+		
+	</script>
+</head>
+<body>
+    
+    <div class="login-page">
+      <div class="form">
+		  <form id="resetPwdform" method="post">
+          	  {% csrf_token %}
+              <span id="error"></span>
+              <input type="password" placeholder="old password" id="oldpwd" name="oldpwd" />
+              <input type="password" placeholder="new password" id="newpwd" name="newpwd" />
+              <input type="password" placeholder="new password confirm" id="newpwdconfirm" name="newpwdconfirm" />
+              <input type="submit" value="Save" />
+              <p class="message"><a href="{% url 'dashboard:index'%}">Dashboard</a></p>
+		  </form>
+      </div>
+    </div>
+    
+</body>
+</html>
